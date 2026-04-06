@@ -20,13 +20,12 @@ df = load_data()
 # 标题
 st.title("Uni 日历")
 
-# 默认日期改为 2020-06-10
+# 日期选择（默认2020-06-10）
 default_date = datetime(2020, 6, 10).date()
 
-# 日期选择
 selected_date = st.date_input(
     "选择日期",
-    value=default_date,                    # ← 这里改成默认 2020-06-10
+    value=default_date,
     min_value=datetime(2019, 1, 1).date(),
     max_value=datetime(2027, 12, 31).date()
 )
@@ -49,7 +48,6 @@ else:
         if media_str:
             media_list = [m.strip() for m in media_str.split("\n") if m.strip()]
             
-            # 每行最多3个，宽度固定270，间隔紧凑
             cols = st.columns(min(3, len(media_list)))
             for i, media_path in enumerate(media_list):
                 with cols[i % len(cols)]:
@@ -65,3 +63,6 @@ else:
             st.markdown(f"[🔗 查看原帖]({row['原链接']})")
 
         st.divider()
+
+# 底部声明（按你的要求添加）
+st.caption("日历由Uni粉丝制作，供大家方便检索 Uni 的可爱瞬间，未经主人允许请勿用于其他用途。")
