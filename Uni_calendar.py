@@ -17,7 +17,7 @@ def load_data():
 
 df = load_data()
 
-# 获取所有有记录的日期（用于自动跳转）
+# 获取所有有记录的日期
 available_dates = sorted(pd.to_datetime(df["日期"]).dt.date.unique())
 
 # 标题
@@ -37,7 +37,7 @@ selected_date_str = selected_date.strftime("%Y-%m-%d")
 
 # 如果选择的日期没有记录，自动跳转到最近的有记录日期
 if selected_date_str not in df["日期"].values:
-    selected_date_obj = selected_date.date()
+    selected_date_obj = selected_date
     closest_date = min(available_dates, key=lambda x: abs((x - selected_date_obj).days))
     closest_str = closest_date.strftime("%Y-%m-%d")
     
