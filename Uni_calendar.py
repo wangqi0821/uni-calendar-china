@@ -17,10 +17,13 @@ def load_data():
 
 df = load_data()
 
+# 获取所有有记录的日期（用于自动跳转）
+available_dates = sorted(pd.to_datetime(df["日期"]).dt.date.unique())
+
 # 标题
 st.title("Uni 日历")
 
-# 日期选择（默认2020-06-10）
+# 默认日期为 2020-06-10
 default_date = datetime(2020, 6, 10).date()
 
 selected_date = st.date_input(
@@ -31,6 +34,15 @@ selected_date = st.date_input(
 )
 
 selected_date_str = selected_date.strftime("%Y-%m-%d")
+
+# 如果选择的日期没有记录，自动跳转到最近的有记录日期
+if selected_date_str not in df["日期"].values:
+    selected_date_obj = selected_date.date()
+    closest_date = min(available_dates, key=lambda x: abs((x - selected_date_obj).days))
+    closest_str = closest_date.strftime("%Y-%m-%d")
+    
+    st.warning(f"📅 {selected_date_str} 还没有记录，已自动跳转到最近的有记录日期 **{closest_str}**")
+    selected_date_str = closest_str
 
 # 筛选当天记录
 day_df = df[df["日期"] == selected_date_str].copy()
@@ -43,7 +55,6 @@ else:
     for _, row in day_df.iterrows():
         st.subheader(row["描述"])
 
-        # 处理 Uni 列（一行多图/视频）
         media_str = str(row.get("Uni", "")).strip()
         if media_str:
             media_list = [m.strip() for m in media_str.split("\n") if m.strip()]
@@ -58,11 +69,10 @@ else:
                     else:
                         st.write(f"📎 {media_path}")
 
-        # 原链接
         if pd.notna(row.get("原链接")) and str(row["原链接"]).strip():
             st.markdown(f"[🔗 查看原帖]({row['原链接']})")
 
         st.divider()
 
-# 底部声明（按你的要求添加）
-st.caption("日历由Uni粉丝制作，供大家方便检索 Uni 的可爱瞬间，未经Uni主人允许请勿用于其他用途。")
+# 底部声明
+st.caption("日历由Uni粉丝制作，供大家方便检索 Uni 的可爱瞬间，未经主人允许请勿用于其他用途。")
