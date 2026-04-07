@@ -35,20 +35,19 @@ selected_date = st.date_input(
 
 selected_date_str = selected_date.strftime("%Y-%m-%d")
 
-# 如果选择的日期没有记录，跳转到【后一个最近的有记录日期】
+# 如果选择的日期没有记录，跳转到后一个最近的有记录日期
 if selected_date_str not in df["日期"].values:
-    selected_date_obj = selected_date   # 这里已经是 date 对象，不需要再 .date()
+    selected_date_obj = selected_date
     
-    # 找到比当前日期更晚的第一个日期（向后跳）
     future_dates = [d for d in available_dates if d >= selected_date_obj]
     if future_dates:
         closest_date = min(future_dates)
     else:
-        closest_date = max(available_dates)   # 如果后面没有，就跳到最后一个
+        closest_date = max(available_dates)
     
     closest_str = closest_date.strftime("%Y-%m-%d")
     
-    st.error(f"❌ {selected_date_str} 还没有记录，已自动跳转到下一个有记录的日期 **{closest_str}**")
+    st.warning(f"{selected_date_str} 还没有记录，已自动跳转到下一个有记录的日期 **{closest_str}**")
     selected_date_str = closest_str
 
 # 筛选当天记录
