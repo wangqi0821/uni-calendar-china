@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uni 日历</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .calendar-container { max-width: 640px; margin: 0 auto; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen py-8">
+    <div class="calendar-container px-4">
+        <h1 class="text-5xl font-bold text-center mb-8 text-amber-600 flex items-center justify-center gap-3">
+            🐾 Uni 日历
+        </h1>
+
+        <div class="bg-white rounded-3xl shadow-lg p-8 mb-8">
+            <div class="flex justify-center mb-6">
+                <input id="datePicker" type="text" class="w-64 text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-3 focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div id="result" class="min-h-[400px]">
+                <!-- JS 会自动填充内容 -->
+            </div>
+        </div>
+
+        <p class="text-center text-sm text-gray-500">数据来自 Uni.json • 图片使用 jsDelivr 全球加速</p>
+    </div>
+
+    <script>
+        let dateMap = new Map();
+
+        async function loadData() {
+            try {
+                const res = await fetch('Uni.json');
+                const data = await res.json();
+                
+                data.forEach(item => {
+                    if (item.日期) dateMap.set(item.日期, item);
+                });
+
+                const fp = flatpickr("#datePicker", {
+                    dateFormat: "Y-m-d",
+                    defaultDate: [...dateMap.keys()].pop() || new Date(),
+                    onChange: function(selectedDates, dateStr) {
+                        showDate(dateStr);
+                    }
+                });
+
+                // 默认显示最新一条
+                const latest = [...dateMap.keys()].pop();
+                showDate(latest);
+            } catch (e) {
+                document.getElementById("result").innerHTML = `<div class="text-red-500 text-center py-12">❌ Uni.json 加载失败</div>`;
+            }
+        }
+
+        function showDate(dateStr) {
+            const item = dateMap.get(dateStr);
+            const resultDiv = document.getElementById("result");
+
+            if (item && item.Uni) {
+                const images = item.Uni.split(',').map(url => url.trim());
+                let imgHTML = images.map(url => `
+                    <img src="${url}" class="max-w-full rounded-2xl shadow-md mb-4 mx-auto block" alt="Uni 照片">
+                `).join('');
+
+                resultDiv.innerHTML = `
+                    <div class="text-center">
+                        <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-700 px-6 py-2 rounded-3xl text-xl font-medium mb-6">
+                            📅 ${dateStr}
+                        </div>
+                        ${imgHTML}
+                        <div class="mt-8 text-left bg-gray-50 p-6 rounded-2xl text-lg leading-relaxed whitespace-pre-wrap">
+                            ${item.描述 || '暂无描述'}
+                        </div>
+                        \( {item.原链接 ? `<a href=" \){item.原链接}" target="_blank" class="mt-6 inline-block text-blue-600 hover:underline">🔗 查看原始 Instagram 帖子</a>` : ''}
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 p-8 rounded-3xl text-center">
+                        <p class="text-xl font-medium">${dateStr} 还没有记录</p>
+                    </div>
+                `;
+            }
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
