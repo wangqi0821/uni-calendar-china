@@ -15,8 +15,7 @@
         <h1 class="text-5xl font-bold text-center mb-8 text-amber-600">🐾 Uni 日历</h1>
 
         <div class="bg-white rounded-3xl shadow-lg p-8">
-            <input id="dateInput" type="date" 
-                   class="w-full text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-amber-500 mb-6">
+            <input id="dateInput" type="date" class="w-full text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-amber-500 mb-6">
 
             <div id="result" class="min-h-[400px]"></div>
         </div>
@@ -31,26 +30,22 @@
         let allDates = [];
 
         async function loadData() {
-            try {
-                const res = await fetch('Uni.json?' + Date.now());
-                const data = await res.json();
+            const res = await fetch('Uni.json?' + Date.now());
+            const data = await res.json();
 
-                data.forEach(item => {
-                    if (item.日期) {
-                        if (!dateMap.has(item.日期)) dateMap.set(item.日期, []);
-                        dateMap.get(item.日期).push(item);
-                    }
-                });
+            data.forEach(item => {
+                if (item.日期) {
+                    if (!dateMap.has(item.日期)) dateMap.set(item.日期, []);
+                    dateMap.get(item.日期).push(item);
+                }
+            });
 
-                allDates = Array.from(dateMap.keys()).sort();
+            allDates = Array.from(dateMap.keys()).sort();
 
-                const input = document.getElementById('dateInput');
-                input.value = "2020-06-10";
-                input.addEventListener('change', () => showDate(input.value));
-                showDate("2020-06-10");
-            } catch (e) {
-                document.getElementById('result').innerHTML = `<div class="text-red-500 text-center py-12">加载失败，请刷新页面</div>`;
-            }
+            const input = document.getElementById('dateInput');
+            input.value = "2020-06-10";
+            input.addEventListener('change', () => showDate(input.value));
+            showDate("2020-06-10");
         }
 
         function showDate(selectedDate) {
@@ -64,9 +59,13 @@
                     html += `<div class="mb-10 border-b pb-8 last:border-none">`;
                     html += `<h3 class="text-xl font-medium mb-4">${post.描述 || '暂无描述'}</h3>`;
 
-                    if (post.Uni && Array.isArray(post.Uni)) {
+                    if (post.Uni) {
+                        let uniStr = post.Uni;
+                        if (Array.isArray(uniStr)) uniStr = uniStr.join('\n');
+                        const mediaList = uniStr.split('\n').filter(m => m.trim());
+
                         html += `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
-                        post.Uni.forEach(url => {
+                        mediaList.forEach(url => {
                             url = url.trim();
                             if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
                                 html += `< img src="${url}" class="rounded-2xl shadow-md w-full">`;
