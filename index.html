@@ -5,30 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uni 日历</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .calendar-container { max-width: 640px; margin: 0 auto; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen py-8">
-    <div class="calendar-container px-4">
+    <div class="max-w-md mx-auto px-4">
         <h1 class="text-5xl font-bold text-center mb-8 text-amber-600 flex items-center justify-center gap-3">
             🐾 Uni 日历
         </h1>
 
-        <div class="bg-white rounded-3xl shadow-lg p-8 mb-8">
-            <div class="flex justify-center mb-6">
-                <input id="datePicker" type="text" class="w-64 text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-3 focus:outline-none focus:border-amber-500">
+        <div class="bg-white rounded-3xl shadow-lg p-8">
+            <div class="mb-6">
+                <input id="dateInput" type="date" 
+                       class="w-full text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-amber-500">
             </div>
 
-            <div id="result" class="min-h-[400px]">
-                <!-- JS 会自动填充内容 -->
-            </div>
+            <div id="result" class="min-h-[420px]"></div>
         </div>
 
-        <p class="text-center text-sm text-gray-500">数据来自 Uni.json • 图片使用 jsDelivr 全球加速</p>
+        <p class="text-center text-sm text-gray-500 mt-6">
+            数据来自 Uni.json • 图片使用 jsDelivr 全球加速
+        </p>
     </div>
 
     <script>
@@ -43,30 +41,25 @@
                     if (item.日期) dateMap.set(item.日期, item);
                 });
 
-                const fp = flatpickr("#datePicker", {
-                    dateFormat: "Y-m-d",
-                    defaultDate: [...dateMap.keys()].pop() || new Date(),
-                    onChange: function(selectedDates, dateStr) {
-                        showDate(dateStr);
-                    }
-                });
-
-                // 默认显示最新一条
-                const latest = [...dateMap.keys()].pop();
+                const input = document.getElementById('dateInput');
+                const latest = [...dateMap.keys()].pop() || new Date().toISOString().slice(0,10);
+                input.value = latest;
+                input.addEventListener('change', () => showDate(input.value));
+                
                 showDate(latest);
             } catch (e) {
-                document.getElementById("result").innerHTML = `<div class="text-red-500 text-center py-12">❌ Uni.json 加载失败</div>`;
+                document.getElementById('result').innerHTML = `<div class="text-red-500 text-center py-12 text-xl">❌ 加载 Uni.json 失败</div>`;
             }
         }
 
         function showDate(dateStr) {
             const item = dateMap.get(dateStr);
-            const resultDiv = document.getElementById("result");
+            const resultDiv = document.getElementById('result');
 
             if (item && item.Uni) {
                 const images = item.Uni.split(',').map(url => url.trim());
                 let imgHTML = images.map(url => `
-                    <img src="${url}" class="max-w-full rounded-2xl shadow-md mb-4 mx-auto block" alt="Uni 照片">
+                    <img src="${url}" class="max-w-full rounded-2xl shadow-md mb-4 mx-auto block" alt="Uni">
                 `).join('');
 
                 resultDiv.innerHTML = `
