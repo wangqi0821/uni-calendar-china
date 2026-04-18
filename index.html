@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,9 @@
     <title>Uni 日历</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen py-8">
@@ -15,8 +17,11 @@
         <h1 class="text-5xl font-bold text-center mb-8 text-amber-600">🐾 Uni 日历</h1>
 
         <div class="bg-white rounded-3xl shadow-lg p-8">
-            <input id="dateInput" type="date" 
-                   class="w-full text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-amber-500 mb-6">
+            <input
+                id="dateInput"
+                type="date"
+                class="w-full text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-amber-500 mb-6"
+            >
 
             <div id="result" class="min-h-[400px]"></div>
         </div>
@@ -30,72 +35,183 @@
         let dateMap = new Map();
         let allDates = [];
 
-        async function loadData() {
-            const res = await fetch('Uni.json?' + Date.now());
-            const data = await res.json();
-
-            data.forEach(item => {
-                if (item.日期) {
-                    if (!dateMap.has(item.日期)) dateMap.set(item.日期, []);
-                    dateMap.get(item.日期).push(item);
-                }
+        function escapeHtml(str) {
+            return String(str || "").replace(/[&<>"']/g, function (match) {
+                return {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;"
+                }[match];
             });
+        }
 
-            allDates = Array.from(dateMap.keys()).sort();
+        function isImage(url) {
+            return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+        }
 
-            const input = document.getElementById('dateInput');
-            input.value = "2020-06-10";
-            input.addEventListener('change', () => showDate(input.value));
-            showDate("2020-06-10");
+        function isVideo(url) {
+            return /\.(mp4|mov|webm|m4v)$/i.test(url);
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch('Uni.json?' + Date.now());
+                const data = await res.json();
+
+                dateMap = new Map();
+
+                data.forEach(item => {
+                    const date = (item.日期 || "").trim();
+                    if (!date) return;
+
+                    if (!dateMap.has(date)) {
+                        dateMap.set(date, []);
+                    }
+                    dateMap.get(date).push(item);
+                });
+
+                allDates = Array.from(dateMap.keys()).sort();
+
+                const input = document.getElementById('dateInput');
+
+                if (allDates.length === 0) {
+                    document.getElementById('result').innerHTML = `
+                        <div class="bg-red-50 border border-red-200 text-red-700 p-6 rounded-3xl text-center">
+                            没有读取到任何数据，请检查 Uni.json
+                        </div>
+                    `;
+                    return;
+                }
+
+                const defaultDate = allDates.includes("2020-06-10") ? "2020-06-10" : allDates[0];
+                input.value = defaultDate;
+
+                input.addEventListener('change', () => {
+                    showDate(input.value);
+                });
+
+                showDate(defaultDate);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('result').innerHTML = `
+                    <div class="bg-red-50 border border-red-200 text-red-700 p-6 rounded-3xl text-center">
+                        Uni.json 加载失败，请检查文件路径、JSON 格式和 GitHub Pages 部署状态
+                    </div>
+                `;
+            }
+        }
+
+        function renderMedia(mediaList) {
+            if (!Array.isArray(mediaList) || mediaList.length === 0) return '';
+
+            let html = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
+
+            mediaList
+                .map(url => (url || "").trim())
+                .filter(Boolean)
+                .forEach(url => {
+                    if (isImage(url)) {
+                        html += `
+                            <img
+                                src="${url}"
+                                alt="Uni 帖子图片"
+                                loading="lazy"
+                                class="rounded-2xl shadow-md w-full"
+                            >
+                        `;
+                    } else if (isVideo(url)) {
+                        html += `
+                            <video
+                                src="${url}"
+                                controls
+                                playsinline
+                                preload="metadata"
+                                class="rounded-2xl shadow-md w-full"
+                            ></video>
+                        `;
+                    } else {
+                        html += `
+                            <a
+                                href=" "
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="text-blue-600 underline break-all"
+                            >
+                                打开媒体链接
+                            </a >
+                        `;
+                    }
+                });
+
+            html += `</div>`;
+            return html;
+        }
+
+        function findNextDate(selectedDate) {
+            const future = allDates.filter(d => d >= selectedDate);
+            return future.length ? future[0] : allDates[allDates.length - 1];
         }
 
         function showDate(selectedDate) {
-            const posts = dateMap.get(selectedDate) || [];
             const resultDiv = document.getElementById('result');
+            const input = document.getElementById('dateInput');
 
-            if (posts.length > 0) {
-                let html = `<div class="text-center mb-6"><span class="bg-green-100 text-green-700 px-6 py-2 rounded-3xl text-xl">📅 ${selectedDate} 共有 ${posts.length} 条帖子</span></div>`;
+            let posts = dateMap.get(selectedDate) || [];
 
-                posts.forEach(post => {
-                    html += `<div class="mb-10 border-b pb-8 last:border-none">`;
-                    html += `<h3 class="text-xl font-medium mb-4">${post.描述 || '暂无描述'}</h3>`;
-
-                    if (post.Uni && Array.isArray(post.Uni)) {
-                        html += `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
-                        post.Uni.forEach(url => {
-                            url = url.trim();
-                            if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
-                                html += `< img src="${url}" class="rounded-2xl shadow-md w-full">`;
-                            } else if (url.match(/\.(mp4|mov|webm)$/i)) {
-                                html += `<video src="${url}" controls class="rounded-2xl shadow-md w-full"></video>`;
-                            }
-                        });
-                        html += `</div>`;
-                    }
-
-                    if (post.原链接) {
-                        html += `<a href=" " target="_blank" class="mt-4 inline-flex items-center gap-1 text-blue-600 hover:underline">🔗 查看原始 Instagram 帖子</a >`;
-                    }
-                    html += `</div>`;
-                });
-
-                resultDiv.innerHTML = html;
-            } else {
-                const selected = new Date(selectedDate);
-                const future = allDates.filter(d => new Date(d) >= selected);
-                const jumpDate = future.length ? future[0] : allDates[allDates.length-1];
+            if (posts.length === 0) {
+                const jumpDate = findNextDate(selectedDate);
 
                 resultDiv.innerHTML = `
                     <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 p-8 rounded-3xl text-center">
-                        <p class="text-xl font-medium">${selectedDate} 还没有记录</p >
-                        <p class="mt-3">已自动跳转到下一个有记录的日期 <strong>${jumpDate}</strong></p >
-                    </div>`;
-                
+                        <p class="text-xl font-medium">${escapeHtml(selectedDate)} 还没有记录</p >
+                        <p class="mt-3">已自动跳转到下一个有记录的日期 <strong>${escapeHtml(jumpDate)}</strong></p >
+                    </div>
+                `;
+
                 setTimeout(() => {
-                    document.getElementById('dateInput').value = jumpDate;
+                    input.value = jumpDate;
                     showDate(jumpDate);
                 }, 1000);
+
+                return;
             }
+
+            let html = `
+                <div class="text-center mb-6">
+                    <span class="bg-green-100 text-green-700 px-6 py-2 rounded-3xl text-xl">
+                        📅 ${escapeHtml(selectedDate)} 共有 ${posts.length} 条帖子
+                    </span>
+                </div>
+            `;
+
+            posts.forEach(post => {
+                const desc = post.描述 ? escapeHtml(post.描述) : '暂无描述';
+                const originalLink = (post.原链接 || "").trim();
+                const mediaHtml = renderMedia(post.Uni);
+
+                html += `<div class="mb-10 border-b pb-8 last:border-none">`;
+                html += `<h3 class="text-xl font-medium mb-4 whitespace-pre-wrap break-words">${desc}</h3>`;
+                html += mediaHtml;
+
+                if (originalLink) {
+                    html += `
+                        <a
+                            href="${originalLink}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="mt-4 inline-flex items-center gap-1 text-blue-600 hover:underline break-all"
+                        >
+                            🔗 查看原始 Instagram 帖子
+                        </a >
+                    `;
+                }
+
+                html += `</div>`;
+            });
+
+            resultDiv.innerHTML = html;
         }
 
         window.onload = loadData;
