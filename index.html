@@ -10,76 +10,95 @@
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen py-8">
-    <div class="max-w-md mx-auto px-4">
+    <div class="max-w-2xl mx-auto px-4">
         <h1 class="text-5xl font-bold text-center mb-8 text-amber-600 flex items-center justify-center gap-3">
             🐾 Uni 日历
         </h1>
 
-        <div class="bg-white rounded-3xl shadow-lg p-8">
-            <div class="mb-6">
-                <input id="dateInput" type="date" 
-                       class="w-full text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-amber-500">
-            </div>
+        <div class="bg-white rounded-3xl shadow-lg p-8 mb-8">
+            <input id="dateInput" type="date" class="w-full text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-amber-500 mb-6">
 
-            <div id="result" class="min-h-[420px]"></div>
+            <div id="result"></div>
         </div>
 
-        <p class="text-center text-sm text-gray-500 mt-6">
-            数据来自 Uni.json • 图片使用 jsDelivr 全球加速
-        </p>
+        <p class="text-center text-sm text-gray-500">数据来自 Uni.json • 图片使用 jsDelivr 全球加速</p >
     </div>
 
     <script>
         let dateMap = new Map();
+        let allDates = [];
 
         async function loadData() {
             try {
                 const res = await fetch('Uni.json');
                 const data = await res.json();
-                
+
                 data.forEach(item => {
-                    if (item.日期) dateMap.set(item.日期, item);
+                    if (item.日期) {
+                        if (!dateMap.has(item.日期)) dateMap.set(item.日期, []);
+                        dateMap.get(item.日期).push(item);
+                    }
                 });
 
+                allDates = Array.from(dateMap.keys()).sort();
+
                 const input = document.getElementById('dateInput');
-                const latest = [...dateMap.keys()].pop() || new Date().toISOString().slice(0,10);
-                input.value = latest;
-                input.addEventListener('change', () => showDate(input.value));
+                const defaultDate = "2020-06-10";
+                input.value = allDates.includes(defaultDate) ? defaultDate : allDates[allDates.length-1] || new Date().toISOString().slice(0,10);
                 
-                showDate(latest);
+                input.addEventListener('change', () => showDate(input.value));
+                showDate(input.value);
             } catch (e) {
-                document.getElementById('result').innerHTML = `<div class="text-red-500 text-center py-12 text-xl">❌ 加载 Uni.json 失败</div>`;
+                document.getElementById('result').innerHTML = `<div class="text-red-500 text-center py-12">❌ Uni.json 加载失败</div>`;
             }
         }
 
-        function showDate(dateStr) {
-            const item = dateMap.get(dateStr);
+        function showDate(selectedDate) {
+            const posts = dateMap.get(selectedDate) || [];
             const resultDiv = document.getElementById('result');
 
-            if (item && item.Uni) {
-                const images = item.Uni.split(',').map(url => url.trim());
-                let imgHTML = images.map(url => `
-                    <img src="${url}" class="max-w-full rounded-2xl shadow-md mb-4 mx-auto block" alt="Uni">
-                `).join('');
+            if (posts.length > 0) {
+                let html = `<div class="text-center mb-6"><span class="bg-green-100 text-green-700 px-6 py-2 rounded-3xl text-xl">📅 ${selectedDate} 共有 ${posts.length} 条帖子</span></div>`;
+
+                posts.forEach(post => {
+                    html += `<div class="mb-8 border-b pb-8 last:border-none">`;
+                    html += `<h3 class="text-xl font-medium mb-4">${post.描述 || '暂无描述'}</h3>`;
+
+                    if (post.Uni) {
+                        const mediaList = post.Uni.split('\n').filter(m => m.trim());
+                        mediaList.forEach(media => {
+                            const url = media.trim();
+                            if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                                html += `< img src="${url}" class="max-w-full rounded-2xl shadow-md mb-4 mx-auto block">`;
+                            } else if (url.match(/\.(mp4|mov|webm)$/i)) {
+                                html += `<video src="${url}" controls class="max-w-full rounded-2xl shadow-md mb-4 mx-auto block"></video>`;
+                            }
+                        });
+                    }
+
+                    if (post.原链接) {
+                        html += `<a href=" " target="_blank" class="inline-flex items-center gap-1 text-blue-600 hover:underline mt-4">🔗 查看原始 Instagram 帖子</a >`;
+                    }
+                    html += `</div>`;
+                });
+
+                resultDiv.innerHTML = html;
+            } else {
+                // 自动跳转逻辑
+                const selectedObj = new Date(selectedDate);
+                const futureDates = allDates.filter(d => new Date(d) >= selectedObj);
+                let jumpDate = futureDates.length ? futureDates[0] : allDates[allDates.length-1];
 
                 resultDiv.innerHTML = `
-                    <div class="text-center">
-                        <div class="inline-flex items-center gap-2 bg-amber-100 text-amber-700 px-6 py-2 rounded-3xl text-xl font-medium mb-6">
-                            📅 ${dateStr}
-                        </div>
-                        ${imgHTML}
-                        <div class="mt-8 text-left bg-gray-50 p-6 rounded-2xl text-lg leading-relaxed whitespace-pre-wrap">
-                            ${item.描述 || '暂无描述'}
-                        </div>
-                        \( {item.原链接 ? `<a href=" \){item.原链接}" target="_blank" class="mt-6 inline-block text-blue-600 hover:underline">🔗 查看原始 Instagram 帖子</a>` : ''}
-                    </div>
-                `;
-            } else {
-                resultDiv.innerHTML = `
                     <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 p-8 rounded-3xl text-center">
-                        <p class="text-xl font-medium">${dateStr} 还没有记录</p>
-                    </div>
-                `;
+                        <p class="text-xl font-medium">${selectedDate} 还没有记录</p >
+                        <p class="mt-3">已自动跳转到下一个有记录的日期 <strong>${jumpDate}</strong></p >
+                    </div>`;
+                
+                setTimeout(() => {
+                    document.getElementById('dateInput').value = jumpDate;
+                    showDate(jumpDate);
+                }, 800);
             }
         }
 
