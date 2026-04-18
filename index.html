@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Uni 日历</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -15,10 +14,9 @@
         <h1 class="text-5xl font-bold text-center mb-8 text-amber-600">🐾 Uni 日历</h1>
 
         <div class="bg-white rounded-3xl shadow-lg p-8">
-            <input id="dateInput" type="date" 
-                   class="w-full text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-4 focus:outline-none focus:border-amber-500 mb-6">
+            <input id="dateInput" type="date" class="w-full text-center text-2xl font-medium border border-amber-300 rounded-2xl px-6 py-4 mb-6">
 
-            <div id="result" class="min-h-[400px]"></div>
+            <div id="result" class="min-h-[400px] text-center"></div>
         </div>
 
         <p class="text-center text-sm text-gray-500 mt-8">
@@ -28,82 +26,62 @@
 
     <script>
         let dateMap = new Map();
-        let allDates = [];
 
         async function loadData() {
-            const res = await fetch('Uni.json?' + Date.now()); // 强制不缓存
-            const data = await res.json();
+            try {
+                const res = await fetch('Uni.json?' + Date.now());
+                const data = await res.json();
 
-            data.forEach(item => {
-                if (item.日期) {
-                    if (!dateMap.has(item.日期)) dateMap.set(item.日期, []);
-                    dateMap.get(item.日期).push(item);
-                }
-            });
-
-            allDates = Array.from(dateMap.keys()).sort();
-
-            const input = document.getElementById('dateInput');
-            input.value = "2020-06-10";
-            input.addEventListener('change', () => showDate(input.value));
-            showDate("2020-06-10");
-        }
-
-        function showDate(selectedDate) {
-            const posts = dateMap.get(selectedDate) || [];
-            const resultDiv = document.getElementById('result');
-
-            if (posts.length > 0) {
-                let html = `<div class="text-center mb-6">
-                    <span class="bg-green-100 text-green-700 px-6 py-2 rounded-3xl text-xl">
-                        📅 ${selectedDate} 共有 ${posts.length} 条帖子
-                    </span>
-                </div>`;
-
-                posts.forEach(post => {
-                    html += `<div class="mb-10 border-b pb-8 last:border-none">`;
-                    html += `<h3 class="text-xl font-medium mb-4">${post.描述 || '暂无描述'}</h3>`;
-
-                    if (post.Uni) {
-                        // 关键修复：处理 JSON 转义的 \n 和 \/ 
-                        let uniStr = (post.Uni || '').replace(/\\n/g, '\n').replace(/\\\\/g, '\\').replace(/\\\/g, '/');
-                        const mediaList = uniStr.split('\n').filter(m => m.trim());
-
-                        html += `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
-                        mediaList.forEach(url => {
-                            url = url.trim();
-                            if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
-                                html += `< img src="${url}" class="rounded-2xl shadow-md w-full">`;
-                            } else if (url.match(/\.(mp4|mov|webm)$/i)) {
-                                html += `<video src="${url}" controls class="rounded-2xl shadow-md w-full"></video>`;
-                            }
-                        });
-                        html += `</div>`;
+                data.forEach(item => {
+                    if (item.日期) {
+                        if (!dateMap.has(item.日期)) dateMap.set(item.日期, []);
+                        dateMap.get(item.日期).push(item);
                     }
-
-                    if (post.原链接) {
-                        html += `<a href=" " target="_blank" class="mt-4 inline-flex items-center gap-1 text-blue-600 hover:underline">🔗 查看原始 Instagram 帖子</a >`;
-                    }
-                    html += `</div>`;
                 });
 
-                resultDiv.innerHTML = html;
-            } else {
-                const selected = new Date(selectedDate);
-                const future = allDates.filter(d => new Date(d) >= selected);
-                const jumpDate = future.length ? future[0] : allDates[allDates.length-1];
-
-                resultDiv.innerHTML = `
-                    <div class="bg-yellow-100 border border-yellow-300 text-yellow-800 p-8 rounded-3xl text-center">
-                        <p class="text-xl font-medium">${selectedDate} 还没有记录</p >
-                        <p class="mt-3">已自动跳转到下一个有记录的日期 <strong>${jumpDate}</strong></p >
-                    </div>`;
-                
-                setTimeout(() => {
-                    document.getElementById('dateInput').value = jumpDate;
-                    showDate(jumpDate);
-                }, 1000);
+                const input = document.getElementById('dateInput');
+                input.value = "2020-06-10";
+                input.addEventListener('change', () => showDate(input.value));
+                showDate("2020-06-10");
+            } catch (e) {
+                document.getElementById('result').innerHTML = `<div class="text-red-500 py-12">加载失败，请刷新页面</div>`;
             }
+        }
+
+        function showDate(date) {
+            const posts = dateMap.get(date) || [];
+            const div = document.getElementById('result');
+
+            if (posts.length === 0) {
+                div.innerHTML = `<p class="text-yellow-600">该日期还没有记录</p >`;
+                return;
+            }
+
+            let html = `<p class="text-green-700 font-medium mb-6">📅 ${date} 共有 ${posts.length} 条帖子</p >`;
+
+            posts.forEach(post => {
+                html += `<div class="mb-8">`;
+                html += `<p class="text-lg font-medium">${post.描述 || ''}</p >`;
+
+                if (post.Uni) {
+                    const urls = post.Uni.split('\n').filter(u => u.trim());
+                    html += `<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">`;
+                    urls.forEach(url => {
+                        url = url.trim();
+                        if (url) {
+                            html += `< img src="${url}" class="rounded-2xl shadow-md w-full">`;
+                        }
+                    });
+                    html += `</div>`;
+                }
+
+                if (post.原链接) {
+                    html += `<a href=" " target="_blank" class="mt-4 text-blue-600 hover:underline block">🔗 查看原始 Instagram 帖子</a >`;
+                }
+                html += `</div>`;
+            });
+
+            div.innerHTML = html;
         }
 
         window.onload = loadData;
