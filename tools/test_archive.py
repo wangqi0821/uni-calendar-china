@@ -116,6 +116,13 @@ class FrozenArchiveTests(unittest.TestCase):
                 contents = (PROJECT_ROOT / relative).read_bytes()
                 self.assertEqual(hashlib.sha256(contents).hexdigest()[:12], match[2])
                 self.assertEqual(set(json.loads(contents)), {"days"})
+        initial = self.index["initialMonth"]
+        self.assertEqual(set(initial), {"month", "days"})
+        self.assertEqual(initial["month"], "2020-06")
+        self.assertIn("2020-06-10", initial["days"])
+        original_month = (PROJECT_ROOT / self.index["months"][initial["month"]]).read_bytes()
+        self.assertEqual(initial["days"], json.loads(original_month)["days"])
+        self.assertEqual(build_archive.json_bytes({"days": initial["days"]}), original_month)
 
     def test_regeneration_is_byte_identical_and_preserves_sources(self):
         source = PROJECT_ROOT / "Uni.json"

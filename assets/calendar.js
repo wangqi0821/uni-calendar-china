@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-    const INDEX_URL = "data/index.json?v=20261013";
+    const INDEX_URL = "data/index.json?v=20261013-2";
     const FETCH_TIMEOUT = 15000;
     const MEDIA_TIMEOUT = 20000;
     const BACKUP_BASE = "https://cdn.jsdelivr.net/gh/wangqi0821/uni-calendar-china@f4d34b3543439f40cc093c0ffa57c65e8b23303d/";
@@ -84,6 +84,10 @@
             const month = date.slice(0, 7);
             const path = data.months[month];
             if (typeof path !== "string" || !/^data\/\d{4}-\d{2}\.[A-Za-z0-9_-]+\.json$/.test(path) || !path.startsWith("data/" + month + ".")) throw new Error("Invalid month path");
+        }
+        if (data.initialMonth !== undefined) {
+            const initial = data.initialMonth;
+            if (!initial || !Object.prototype.hasOwnProperty.call(data.months, initial.month) || !initial.days || typeof initial.days !== "object" || Array.isArray(initial.days) || !Object.entries(initial.days).every(([date, posts]) => validDate(date) && date.startsWith(initial.month + "-") && Array.isArray(posts) && posts.length)) throw new Error("Invalid initial month");
         }
         return { ...data, dates };
     }
@@ -369,6 +373,7 @@
         try {
             archive = validateIndex(await fetchJSON(INDEX_URL));
             dateSet = new Set(archive.dates);
+            if (archive.initialMonth) monthCache.set(archive.initialMonth.month, Promise.resolve(archive.initialMonth.days));
             range.textContent = "当前归档：" + archive.firstDate + " 至 " + archive.lastDate + "；历史归档，暂不更新。";
             input.disabled = false;
             navigation.hidden = false;

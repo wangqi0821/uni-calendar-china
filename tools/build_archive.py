@@ -24,6 +24,7 @@ from PIL import Image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DATE = "2020-06-10"
 CDN_PREFIX = "/gh/wangqi0821/uni-calendar-china@main/"
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
@@ -123,6 +124,11 @@ def compile_archive(records: list, media_root: Path) -> tuple[dict, dict[str, by
         relative = f"data/{month}.{digest}.json"
         month_paths[month] = relative
         files[relative] = contents
+    if DEFAULT_DATE not in days:
+        raise ValueError(f"The frozen archive is missing its default date: {DEFAULT_DATE}")
+    # Embed the default month so the first visit needs only one data request.
+    # Its independent content-addressed file remains unchanged for other clients.
+    initial_month = DEFAULT_DATE[:7]
     index = {
         "version": 1,
         "firstDate": dates[0],
@@ -131,6 +137,7 @@ def compile_archive(records: list, media_root: Path) -> tuple[dict, dict[str, by
         "months": month_paths,
         "postCount": len(records),
         "mediaCount": media_count,
+        "initialMonth": {"month": initial_month, "days": months[initial_month]},
     }
     return index, files
 
