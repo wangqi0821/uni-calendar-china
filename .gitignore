@@ -1,0 +1,21 @@
+# Login sessions and local secrets must never be committed.
+instagram_session
+instagram_session.*
+*session*
+*.cookie
+*.cookies
+.env
+.env.*
+!.env.example
+
+# Local preview/build output.
+__pycache__/
+*.pyc
+_site/
+.jekyll-cache/
+.sass-cache/
+node_modules/
+work/
+outputs/
+*.log
+index.original.html
