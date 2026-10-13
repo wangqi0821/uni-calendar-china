@@ -147,9 +147,8 @@
 
     function showEmptyDate(date) {
         const notice = element("div", "notice");
-        const outside = date < archive.firstDate || date > archive.lastDate;
         notice.append(element("p", "notice-title", date + " 还没有记录"));
-        notice.append(element("p", "", outside ? "这个日期在当前归档范围之外。日历不会自动更新新的内容。" : "已保留你选择的日期，可以翻到附近有记录的日子。"));
+        notice.append(element("p", "", "可以翻到附近有记录的日子。"));
         const adjacent = adjacentDates(date);
         const actions = element("div", "notice-actions");
         if (adjacent.previous) actions.append(button("← " + adjacent.previous, () => selectDate(adjacent.previous)));
@@ -374,13 +373,13 @@
             archive = validateIndex(await fetchJSON(INDEX_URL));
             dateSet = new Set(archive.dates);
             if (archive.initialMonth) monthCache.set(archive.initialMonth.month, Promise.resolve(archive.initialMonth.days));
-            range.textContent = "当前归档：" + archive.firstDate + " 至 " + archive.lastDate + "；历史归档，暂不更新。";
+            range.textContent = "目前更新至" + archive.lastDate;
             input.disabled = false;
             navigation.hidden = false;
             const defaultDate = dateSet.has("2020-06-10") ? "2020-06-10" : archive.firstDate;
             await selectDate(dateFromURL() || defaultDate, "replace");
         } catch {
-            range.textContent = "暂时无法读取归档范围。";
+            range.textContent = "暂时无法读取日期范围。";
             showError("日历暂时没有加载成功。", loadArchive);
         }
     }

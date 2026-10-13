@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="按日期翻阅 Uni 的照片与视频归档。">
+    <meta name="description" content="按日期翻阅 Uni 的照片与视频。">
     <title>Uni 日历</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="assets/calendar.css?v=20261013-2">
-    <script src="assets/calendar.js?v=20261013-2" defer></script>
+    <script src="assets/calendar.js?v=20261014" defer></script>
 </head>
 <body>
     <main class="page">
         <h1>🐾 Uni 日历</h1>
-        <section class="calendar-card" aria-label="Uni 日期归档">
+        <section class="calendar-card" aria-label="Uni 日历内容">
             <label class="date-label" for="dateInput">选择日期</label>
             <input id="dateInput" type="date" aria-describedby="archiveRange" disabled>
-            <p id="archiveRange" class="archive-range">正在读取归档范围…</p>
+            <p id="archiveRange" class="archive-range">正在读取日期范围…</p>
             <nav class="date-navigation" aria-label="按有记录的日期翻阅" hidden>
                 <button id="previousDate" class="quiet-button" type="button" disabled>← 上一个有记录日</button>
                 <button id="nextDate" class="quiet-button" type="button" disabled>下一个有记录日 →</button>
@@ -26,7 +26,7 @@
             </div>
             <noscript><p class="notice notice-error">请启用浏览器的 JavaScript，以按日期查看日历。</p></noscript>
         </section>
-        <p class="site-note">日历由 Uni 粉丝制作，供大家方便检索 Uni 的可爱瞬间，未经主人允许请勿用于其他用途。</p>
+        <p class="site-note">未经Uni主人允许请勿用于其他用途。</p>
     </main>
 </body>
 </html>
