@@ -12,6 +12,11 @@
     const navigation = document.querySelector(".date-navigation");
     const previousButton = document.getElementById("previousDate");
     const nextButton = document.getElementById("nextDate");
+    const displayMonth = document.getElementById("displayMonth");
+    const displayDay = document.getElementById("displayDay");
+    const displayWeekday = document.getElementById("displayWeekday");
+    const MONTH_NAMES = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+    const WEEKDAY_NAMES = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
     const monthCache = new Map();
     let archive;
     let dateSet;
@@ -145,6 +150,19 @@
         nextButton.setAttribute("aria-label", adjacent.next ? "下一个有记录日，" + adjacent.next : "没有更晚的记录");
     }
 
+    function updateDateDisplay(date) {
+        if (!validDate(date)) {
+            displayMonth.textContent = "选择日期";
+            displayDay.textContent = "—";
+            displayWeekday.textContent = "";
+            return;
+        }
+        const [year, month, day] = date.split("-");
+        displayMonth.textContent = MONTH_NAMES[Number(month) - 1] + " " + year;
+        displayDay.textContent = day;
+        displayWeekday.textContent = WEEKDAY_NAMES[new Date(date + "T00:00:00Z").getUTCDay()];
+    }
+
     function showEmptyDate(date) {
         const notice = element("div", "notice");
         notice.append(element("p", "notice-title", date + " 还没有记录"));
@@ -155,7 +173,7 @@
         if (adjacent.next) actions.append(button(adjacent.next + " →", () => selectDate(adjacent.next)));
         notice.append(actions);
         result.append(notice);
-        announce(date + " 没有记录，日期已保留。");
+        announce(date + " 没有记录。");
     }
 
     function setDimensions(media, frame, node) {
@@ -297,16 +315,32 @@
         return item;
     }
 
+    function renderDescription(description, caption) {
+        const text = typeof description === "string" && description ? description : "暂无描述";
+        const characters = Array.from(text);
+        if (characters.length <= 160 && text.split(/\r?\n/).length <= 4) {
+            caption.append(element("p", "post-description", text));
+            return;
+        }
+        const excerpt = element("p", "post-description post-excerpt", characters.slice(0, 120).join("").trimEnd() + (characters.length > 120 ? "…" : ""));
+        const details = element("details", "post-description-details");
+        const summary = element("summary", "", "展开完整原文");
+        details.append(summary, element("p", "post-description", text));
+        details.addEventListener("toggle", () => {
+            excerpt.hidden = details.open;
+            summary.textContent = details.open ? "收起原文" : "展开完整原文";
+        });
+        caption.append(excerpt, details);
+    }
+
     function renderPosts(date, posts) {
-        const heading = element("h2", "date-heading");
-        heading.append(element("span", "date-badge", "📅 " + date + " 共有 " + posts.length + " 条帖子"));
-        result.append(heading);
+        result.append(element("h2", "date-heading visually-hidden", date + "，共有 " + posts.length + " 条帖子"));
         let imageCount = 0;
         let mediaIndex = 0;
-        for (const post of posts) {
+        for (const [postIndex, post] of posts.entries()) {
             if (!post || typeof post !== "object") throw new Error("Invalid post");
             const article = element("article", "post");
-            article.append(element("h3", "post-description", typeof post.description === "string" && post.description ? post.description : "暂无描述"));
+            article.setAttribute("aria-label", date + " 的第 " + (postIndex + 1) + " 条帖子");
             const grid = element("div", "media-grid");
             const mediaList = Array.isArray(post.media) ? post.media : [];
             for (const media of mediaList) {
@@ -314,15 +348,20 @@
                 const firstImage = media && media.type === "image" && imageCount++ === 0;
                 grid.append(renderMedia(media, date, mediaIndex, firstImage));
             }
-            article.append(grid);
+            if (mediaList.length) article.append(grid);
+            const caption = element("div", "post-caption");
+            const label = posts.length > 1 ? "第 " + (postIndex + 1) + " 条 / 共 " + posts.length + " 条帖子" : "1 条帖子";
+            caption.append(element("p", "post-meta", date + " · " + label));
+            renderDescription(post.description, caption);
             const original = sourceURL(post.source);
             if (original) {
-                const link = element("a", "source-link", "🔗 查看原始 Instagram 帖子");
+                const link = element("a", "source-link", "查看原始 Instagram 帖子 ↗");
                 link.href = original;
                 link.target = "_blank";
                 link.rel = "noopener noreferrer";
-                article.append(link);
+                caption.append(link);
             }
+            article.append(caption);
             result.append(article);
         }
         announce(date + "，共有 " + posts.length + " 条帖子。");
@@ -332,6 +371,7 @@
         const requested = ++selection;
         clearResult();
         updateNavigation(date);
+        updateDateDisplay(date);
         if (!validDate(date)) {
             result.setAttribute("aria-busy", "false");
             result.append(element("p", "notice", "请选择一个有效日期。"));

@@ -6,27 +6,38 @@
     <meta name="description" content="按日期翻阅 Uni 的照片与视频。">
     <title>Uni 日历</title>
     <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="assets/calendar.css?v=20261013-2">
-    <script src="assets/calendar.js?v=20261014" defer></script>
+    <link rel="stylesheet" href="assets/calendar.css?v=20261015-1">
+    <script src="assets/calendar.js?v=20261015-1" defer></script>
 </head>
 <body>
-    <main class="page">
-        <h1>🐾 Uni 日历</h1>
-        <section class="calendar-card" aria-label="Uni 日历内容">
-            <label class="date-label" for="dateInput">选择日期</label>
-            <input id="dateInput" type="date" aria-describedby="archiveRange" disabled>
-            <p id="archiveRange" class="archive-range">正在读取日期范围…</p>
+    <header class="site-header">
+        <h1>Uni 日历</h1>
+        <p id="archiveRange" class="archive-range">正在读取日期范围…</p>
+    </header>
+    <main class="calendar-layout">
+        <aside class="calendar-controls" aria-label="日期与翻日导航">
+            <div class="date-display" aria-hidden="true">
+                <span id="displayMonth" class="display-month">—</span>
+                <strong id="displayDay" class="display-day">—</strong>
+                <span id="displayWeekday" class="display-weekday">—</span>
+            </div>
+            <div class="date-picker">
+                <label class="date-label" for="dateInput">选择日期</label>
+                <input id="dateInput" type="date" aria-describedby="archiveRange" disabled>
+            </div>
             <nav class="date-navigation" aria-label="按有记录的日期翻阅" hidden>
                 <button id="previousDate" class="quiet-button" type="button" disabled>← 上一个有记录日</button>
                 <button id="nextDate" class="quiet-button" type="button" disabled>下一个有记录日 →</button>
             </nav>
+        </aside>
+        <section class="calendar-content" aria-label="当天的照片、视频与原文">
             <p id="status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
             <div id="result" aria-busy="true">
                 <p class="loading-message">正在加载日历…</p>
             </div>
             <noscript><p class="notice notice-error">请启用浏览器的 JavaScript，以按日期查看日历。</p></noscript>
         </section>
-        <p class="site-note">未经Uni主人允许请勿用于其他用途。</p>
     </main>
+    <footer class="site-note">未经Uni主人允许请勿用于其他用途。</footer>
 </body>
 </html>
